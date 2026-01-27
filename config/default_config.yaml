@@ -1,0 +1,36 @@
+# Kyros Configuration File
+# Created by: Ayoub Serarfi
+
+app:
+  name: Kyros-Security-Toolkit
+  version: 1.0.0
+  author: Ayoub Serarfi
+
+paths:
+  data_dir: data
+  logs_dir: data/logs
+  reports_dir: data/reports
+
+ids:
+  # Flood detection thresholds
+  syn_flood_threshold: 100
+  udp_flood_threshold: 1000
+  icmp_flood_threshold: 100
+  port_scan_threshold: 20
+
+  # Alert settings
+  alert_cooldown: 5  # seconds between duplicate alerts
+
+  # Buffer settings
+  max_packets_buffer: 1000
+
+  # DNS cache
+  dns_cache_ttl: 300  # seconds
+
+firewall:
+  iptables_path: /usr/sbin/iptables
+  confirm_dangerous_ops: true
+
+display:
+  max_table_rows: 30
+  refresh_rate: 1  # Hz
