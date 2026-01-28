@@ -73,11 +73,13 @@ cd kyros
 
 # Install system dependencies
 sudo apt update
-sudo apt install -y iptables python3-pip
+sudo apt install -y iptables python3-pip python3-venv
 
-# Create virtual environment (recommended)
+# Create virtual environment
 python3 -m venv venv
-source venv/bin/activate  # Activate the environment
+
+# Activate the environment
+source venv/bin/activate
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -86,10 +88,13 @@ pip install -r requirements.txt
 ### Verify Installation
 
 ```bash
+# Test without root (will show a warning but menu should appear)
 python3 kyros.py
 ```
 
 If you see the Kyros banner and main menu, the installation is successful!
+
+**Note:** Keep the virtual environment activated when running Kyros, or use the venv's Python directly with `sudo venv/bin/python3 kyros.py`
 
 ---
 
@@ -97,43 +102,34 @@ If you see the Kyros banner and main menu, the installation is successful!
 
 ### Quick Start
 
-Run Kyros with root privileges (required for network operations):
+**If using virtual environment (recommended):**
 
 ```bash
-# Using the convenience script
-sudo ./run.sh
+# Activate the virtual environment first
+source venv/bin/activate
 
-# Or directly with Python
-sudo python3 kyros.py
+# Run with venv's Python and sudo
+sudo venv/bin/python3 kyros.py
 
 # Or as a module
-sudo python3 -m kyros
+sudo venv/bin/python3 -m kyros
+```
+
+**Alternative methods:**
+
+```bash
+# Using the startup script (automatically installs dependencies system-wide)
+sudo ./start.sh
+
+# Or with system Python (requires dependencies installed system-wide)
+sudo python3 kyros.py
 ```
 
 ### Interactive Menu
 
 Once launched, Kyros presents an interactive menu:
 
-```
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║   ██╗  ██╗██╗   ██╗██████╗  ██████╗ ███████╗                  ║
-║   ██║ ██╔╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██╔════╝                  ║
-║   █████╔╝  ╚████╔╝ ██████╔╝██║   ██║███████╗                  ║
-║   ██╔═██╗   ╚██╔╝  ██╔══██╗██║   ██║╚════██║                  ║
-║   ██║  ██╗   ██║   ██║  ██║╚██████╔╝███████║                  ║
-║   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚══════╝                  ║
-║                                                               ║
-║             Professional Security Toolkit v1.0                ║
-║                   Created by Ayoub Serarfi                    ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
-
-[1] Intrusion Detection System
-[2] Log Analyzer
-[3] Firewall Manager
-[0] Exit
-```
+![Main Menu](screenshots/main-menu.png)
 
 Navigate using number keys and follow the interactive prompts.
 
@@ -151,20 +147,17 @@ Monitor network traffic for suspicious activity:
 * Live statistics dashboard
 * Optional PCAP export
 
-**Example:**
-```
-Available interfaces:
-  [1] eth0
-  [2] wlan0
+**Interface Selection:**
 
-Select interface number: 1
-Save PCAP file? (y/n): y
+![IDS Starting Point](screenshots/ids-starting-point.png)
 
-Starting IDS monitor on eth0...
-Press Ctrl+C to stop monitoring
+**Live Monitoring:**
 
-[Live traffic display with attack alerts]
-```
+![IDS Monitor](screenshots/ids-monitor.png)
+
+**Session Summary:**
+
+![IDS Summary](screenshots/ids-summary.png)
 
 Logs are saved in `data/logs/` and PCAP files (if enabled) are stored in the data directory.
 
@@ -178,24 +171,13 @@ Analyze captured IDS logs for patterns and threats:
 * Generate attack summaries
 * Export detailed reports
 
-**Example:**
-```
-Available log files:
-  [1] ids_monitor_20260127_153045.log
-  [2] ids_monitor_20260126_091234.log
+**Log File Selection:**
 
-Select log file: 1
+![Choosing Logs](screenshots/choosing-logs.png)
 
-Parsing log file...
-Finding anomalies...
+**Analysis Summary:**
 
-Total Lines: 1547
-Protocols: TCP (892), UDP (543), ICMP (112)
-Attacks Detected: SYN Flood (12), Port Scan (3)
-
-Save detailed report? (y/n): y
-Report saved to: data/reports/ids_monitor_20260127_153045_report.txt
-```
+![Log Summary](screenshots/logs-summary.png)
 
 ### 3. Firewall Manager
 
@@ -207,19 +189,9 @@ Manage iptables firewall rules:
 * List current firewall rules
 * Save rules persistently
 
-**Example:**
-```
-[1] Block IP Address
-[2] Unblock IP Address
-[3] Block Port
-[4] Unblock Port
-[5] List Rules
-[6] Save Rules
+**Screenshot:**
 
-Select option: 1
-Enter IP to block: 192.168.1.100
-IP blocked successfully!
-```
+![Firewall Manager](screenshots/firewall.png)
 
 **Note:** Requires root privileges and prompts for confirmation on dangerous operations.
 
@@ -251,4 +223,3 @@ Unauthorized network monitoring may be illegal in your jurisdiction.
 This project is licensed under the **MIT License**.
 
 **Author:** Ayoub Serarfi
-**Version:** 1.0.0
