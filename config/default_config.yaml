@@ -3,7 +3,6 @@
 
 app:
   name: Kyros-Security-Toolkit
-  version: 1.0.0
   author: Ayoub Serarfi
 
 paths:

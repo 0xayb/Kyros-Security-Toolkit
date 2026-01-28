@@ -10,7 +10,6 @@ class Config:
     DEFAULT_CONFIG = {
         'app': {
             'name': 'Kyros',
-            'version': '1.0.0',
             'author': 'Ayoub Serarfi'
         },
         'paths': {

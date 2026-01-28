@@ -4,13 +4,14 @@ import os
 from pathlib import Path
 from colorama import Fore, Style, init
 
-from ..core.utils import clear_screen, get_network_interfaces
-from ..core.validators import sanitize_filename
-from ..ids import IDSMonitor
-from ..analyzer import LogParser, ReportGenerator
-from ..firewall import FirewallManager
+from .core.utils import clear_screen, get_network_interfaces
+from .core.validators import sanitize_filename
+from .ids import IDSMonitor
+from .analyzer import LogParser, ReportGenerator
+from .firewall import FirewallManager
 
 init(autoreset=True)
+
 
 
 class MenuSystem:
@@ -22,20 +23,21 @@ class MenuSystem:
 
     def display_banner(self):
         """Display application banner."""
-        banner = f"""{Fore.CYAN}{Style.BRIGHT}
-╭───────────────────────────────────────────────────────────────────╮
-│                                                                   │
-│   ░██     ░██ ░██     ░██ ░█████████    ░██████     ░██████       │
-│   ░██    ░██   ░██   ░██  ░██     ░██  ░██   ░██   ░██   ░██      │
-│   ░██   ░██     ░██ ░██   ░██     ░██ ░██     ░██ ░██             │
-│   ░███████       ░████    ░█████████  ░██     ░██  ░████████      │
-│   ░██   ░██       ░██     ░██   ░██   ░██     ░██         ░██     │
-│   ░██    ░██      ░██     ░██    ░██   ░██   ░██   ░██   ░██      │
-│   ░██     ░██     ░██     ░██     ░██   ░██████     ░██████       │
-│                                                                   │
-│               Professional Security Toolkit v1.0                  │
-│                    Created by Ayoub Serarfi                       │
-╰───────────────────────────────────────────────────────────────────╯
+        banner = f"""{Fore.YELLOW}{Style.BRIGHT}
+══════════════════════════════════════════════════════════════════════
+                                                  ⠀⠀⠀⠀⠀⠀⢱⣆⠀⠀⠀⠀⠀⠀
+                                                  ⠀⠀⠀⠀⠀⠀⠈⣿⣷⡀⠀⠀⠀⠀
+    ██╗  ██╗██╗   ██╗██████╗  ██████╗ ███████╗    ⠀⠀⠀⠀⠀⠀⢸⣿⣿⣷⣧⠀⠀⠀
+    ██║ ██╔╝╚██╗ ██╔╝██╔══██╗██╔═══██╗██╔════╝    ⠀⠀⠀⠀⡀⢠⣿⡟⣿⣿⣿⡇⠀⠀
+    █████╔╝  ╚████╔╝ ██████╔╝██║   ██║███████╗    ⠀⠀⠀⠀⣳⣼⣿⡏⢸⣿⣿⣿⢀⠀
+    ██╔═██╗   ╚██╔╝  ██╔══██╗██║   ██║╚════██║    ⠀⠀⠀⣰⣿⣿⡿⠁⢸⣿⣿⡟⣼⡆
+    ██║  ██╗   ██║   ██║  ██║╚██████╔╝███████║    ⢰⢀⣾⣿⣿⠟⠀⠀⣾⢿⣿⣿⣿⣿
+    ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚══════╝    ⢸⣿⣿⣿⡏⠀⠀⠀⠃⠸⣿⣿⣿⡿
+                                                  ⢳⣿⣿⣿⠀⠀⠀⠀⠀⠀⢹⣿⡿⡁
+        Professional Security Toolkit             ⠀⠹⣿⣿⡄⠀⠀⠀⠀⠀⢠⣿⡞⠁
+           Created by Ayoub Serarfi               ⠀⠀⠈⠛⢿⣄⠀⠀⠀⣠⠞⠋⠀⠀
+                                                  ⠀⠀⠀⠀⠀⠀⠉⠀⠀⠀⠀⠀⠀⠀
+══════════════════════════════════════════════════════════════════════
 {Style.RESET_ALL}"""
         print(banner)
 
@@ -67,42 +69,49 @@ class MenuSystem:
 
     def ids_menu(self):
         """IDS submenu."""
-        print(f"\n{Fore.CYAN}=== Intrusion Detection System ==={Style.RESET_ALL}\n")
+        while True:
+            clear_screen()
+            print(f"\n{Fore.CYAN}=== Intrusion Detection System ==={Style.RESET_ALL}\n")
 
-        # Get available interfaces
-        interfaces = get_network_interfaces()
-        print("Available interfaces:")
-        for idx, iface in enumerate(interfaces, 1):
-            print(f"  [{idx}] {iface}")
+            # Get available interfaces
+            interfaces = get_network_interfaces()
+            print("Available interfaces:")
+            for idx, iface in enumerate(interfaces, 1):
+                print(f"  {Fore.YELLOW}[{idx}]{Style.RESET_ALL} {iface}")
 
-        iface_choice = input(f"\n{Fore.CYAN}Select interface number: {Style.RESET_ALL}").strip()
+            print(f"\n{Fore.YELLOW}[0]{Style.RESET_ALL} Back to Main Menu")
 
-        try:
-            iface_idx = int(iface_choice) - 1
-            if 0 <= iface_idx < len(interfaces):
-                interface = interfaces[iface_idx]
-            else:
-                print(f"{Fore.RED}Invalid selection!{Style.RESET_ALL}")
+            iface_choice = input(f"\n{Fore.CYAN}Select interface number: {Style.RESET_ALL}").strip()
+
+            if iface_choice == '0':
+                break
+
+            try:
+                iface_idx = int(iface_choice) - 1
+                if 0 <= iface_idx < len(interfaces):
+                    interface = interfaces[iface_idx]
+                else:
+                    print(f"{Fore.RED}Invalid selection!{Style.RESET_ALL}")
+                    input("Press Enter to continue...")
+                    continue
+            except ValueError:
+                print(f"{Fore.RED}Invalid input!{Style.RESET_ALL}")
                 input("Press Enter to continue...")
-                return
-        except ValueError:
-            print(f"{Fore.RED}Invalid input!{Style.RESET_ALL}")
-            input("Press Enter to continue...")
-            return
+                continue
 
-        save_choice = input(f"{Fore.CYAN}Save PCAP file? (y/n): {Style.RESET_ALL}").strip().lower()
-        save_pcap = save_choice == 'y'
+            save_choice = input(f"{Fore.CYAN}Save PCAP file? (y/n): {Style.RESET_ALL}").strip().lower()
+            save_pcap = save_choice == 'y'
 
-        print(f"\n{Fore.GREEN}Starting IDS monitor on {interface}...{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Press Ctrl+C to stop monitoring{Style.RESET_ALL}\n")
+            print(f"\n{Fore.GREEN}Starting IDS monitor on {interface}...{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}Press Ctrl+C to stop monitoring{Style.RESET_ALL}\n")
 
-        try:
-            monitor = IDSMonitor(interface)
-            monitor.start(save_pcap=save_pcap)
-        except Exception as e:
-            print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
+            try:
+                monitor = IDSMonitor(interface)
+                monitor.start(save_pcap=save_pcap)
+            except Exception as e:
+                print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
 
-        input("\nPress Enter to continue...")
+            input("\nPress Enter to continue...")
 
     def analyzer_menu(self):
         """Log analyzer submenu."""
