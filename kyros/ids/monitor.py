@@ -29,10 +29,14 @@ from .detectors import (
 class IDSMonitor:
 
     def __init__(self, interface: str, output_dir: Path = Path('data/logs')):
-        self.logger = setup_logger('ids')
         self.interface = interface
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create log file with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.log_file = self.output_dir / f'ids_monitor_{timestamp}.log'
+        self.logger = setup_logger('ids', log_file=str(self.log_file))
 
         # State
         self.running = False
@@ -102,6 +106,8 @@ class IDSMonitor:
                             'time': datetime.now(),
                             'message': alert
                         })
+                    # Log the alert to file
+                    self.logger.warning(f"ALERT: {alert}")
 
             # Store packet info
             packet_info = self._extract_packet_info(packet)
@@ -193,6 +199,7 @@ class IDSMonitor:
             save_pcap: Whether to save PCAP file
         """
         self.logger.info(f"Starting IDS monitor on {self.interface}")
+        self.logger.info(f"Logging to: {self.log_file}")
 
         if save_pcap:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -243,6 +250,15 @@ class IDSMonitor:
 
             # Print alert summary
             self._print_alert_summary()
+
+            # Log session summary
+            self.logger.info("=" * 50)
+            self.logger.info("IDS Monitoring Session Summary")
+            self.logger.info(f"Interface: {self.interface}")
+            self.logger.info(f"Total packets captured: {len(self.packets)}")
+            self.logger.info(f"Total alerts: {len(self.alerts)}")
+            self.logger.info(f"Log file: {self.log_file}")
+            self.logger.info("=" * 50)
 
     def stop(self):
         """Stop monitoring."""

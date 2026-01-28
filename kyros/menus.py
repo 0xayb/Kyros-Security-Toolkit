@@ -107,6 +107,7 @@ class MenuSystem:
 
             try:
                 monitor = IDSMonitor(interface)
+                print(f"{Fore.CYAN}Log file: {monitor.log_file}{Style.RESET_ALL}\n")
                 monitor.start(save_pcap=save_pcap)
             except Exception as e:
                 print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
@@ -127,7 +128,7 @@ class MenuSystem:
                 if log_files:
                     print("Available log files:")
                     for idx, log_file in enumerate(log_files, 1):
-                        print(f"  [{idx}] {log_file.name}")
+                        print(f"  {Fore.YELLOW}[{idx}]{Style.RESET_ALL} {log_file.name}")
                 else:
                     print(f"{Fore.YELLOW}No log files found{Style.RESET_ALL}")
                     input("Press Enter to continue...")

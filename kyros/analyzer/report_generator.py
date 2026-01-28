@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Dict
 from datetime import datetime
+from colorama import Fore, Style
 
 from ..core.logger import setup_logger
 
@@ -100,28 +101,28 @@ class ReportGenerator:
         Args:
             parsed_data: Data from LogParser.parse_file()
         """
-        print("\n" + "=" * 70)
-        print("Log Analysis Summary")
-        print("=" * 70)
-        print(f"Total Lines: {parsed_data.get('total_lines', 0)}")
+        print("\n" + f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}Log Analysis Summary{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Total Lines:{Style.RESET_ALL} {Fore.WHITE}{parsed_data.get('total_lines', 0)}{Style.RESET_ALL}")
 
         if 'first_timestamp' in parsed_data:
-            print(f"Time Range: {parsed_data['first_timestamp']} to {parsed_data['last_timestamp']}")
+            print(f"{Fore.YELLOW}Time Range:{Style.RESET_ALL} {Fore.WHITE}{parsed_data['first_timestamp']} to {parsed_data['last_timestamp']}{Style.RESET_ALL}")
 
-        print("\nProtocols:")
+        print(f"\n{Fore.YELLOW}Protocols:{Style.RESET_ALL}")
         for proto, count in parsed_data.get('protocols', {}).most_common():
-            print(f"  {proto}: {count}")
+            print(f"  {Fore.GREEN}{proto}:{Style.RESET_ALL} {Fore.WHITE}{count}{Style.RESET_ALL}")
 
-        print("\nAttacks Detected:")
+        print(f"\n{Fore.YELLOW}Attacks Detected:{Style.RESET_ALL}")
         attacks = parsed_data.get('attack_types', {})
         if attacks:
             for attack, count in attacks.most_common():
-                print(f"  {attack}: {count}")
+                print(f"  {Fore.RED}{attack}:{Style.RESET_ALL} {Fore.WHITE}{count}{Style.RESET_ALL}")
         else:
-            print("  No attacks detected")
+            print(f"  {Fore.GREEN}No attacks detected{Style.RESET_ALL}")
 
-        print("\nTop IPs:")
+        print(f"\n{Fore.YELLOW}Top IPs:{Style.RESET_ALL}")
         for ip, count in parsed_data.get('ips', {}).most_common(10):
-            print(f"  {ip}: {count}")
+            print(f"  {Fore.CYAN}{ip}:{Style.RESET_ALL} {Fore.WHITE}{count}{Style.RESET_ALL}")
 
-        print("=" * 70 + "\n")
+        print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
