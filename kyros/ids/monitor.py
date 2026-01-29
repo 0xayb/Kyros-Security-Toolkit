@@ -4,13 +4,14 @@ import os
 import time
 import threading
 import queue
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from scapy.all import AsyncSniffer, wrpcap, conf
-from scapy.layers.inet import IP, TCP, UDP
+from scapy.layers.inet import IP, TCP, UDP, ICMP
 from scapy.layers.l2 import Ether, ARP
 from scapy.layers.dns import DNS
 from rich.console import Console
@@ -38,6 +39,12 @@ class IDSMonitor:
         self.log_file = self.output_dir / f'ids_monitor_{timestamp}.log'
         self.logger = setup_logger('ids', log_file=str(self.log_file))
 
+        # Set console handler to WARNING to avoid interfering with Rich Live display
+        # (file handler will still log everything at INFO level)
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+                handler.setLevel(logging.WARNING)
+
         # State
         self.running = False
         self.sniffer = None
@@ -47,15 +54,20 @@ class IDSMonitor:
 
         # Stats
         self.stats = defaultdict(int)
+        self.port_stats = Counter()
+        self.unique_ips = set()
 
         # Output queues
         self.write_queue = queue.Queue()
         self.pcap_queue = queue.Queue()
 
+        # Get local IP for the interface
+        self.local_ip = self._get_interface_ip()
+
         # Attack detectors
         self.arp_detector = ARPSpoofDetector()
         self.dns_detector = DNSSpoofDetector()
-        self.flood_detector = FloodDetector()
+        self.flood_detector = FloodDetector(local_ip=self.local_ip)
         self.portscan_detector = PortScanDetector()
         self.wireless_detector = WirelessAttackDetector()
 
@@ -65,6 +77,18 @@ class IDSMonitor:
         # Configure scapy to be quiet
         conf.verb = 0
         conf.use_pcap = True
+
+    def _get_interface_ip(self) -> Optional[str]:
+        """Get the IP address of the monitoring interface."""
+        try:
+            from scapy.arch import get_if_addr
+            ip = get_if_addr(self.interface)
+            # get_if_addr returns "0.0.0.0" if interface has no IP
+            if ip and ip != "0.0.0.0":
+                return ip
+        except Exception as e:
+            self.logger.debug(f"Could not get IP for interface {self.interface}: {e}")
+        return None
 
     def _is_wireless(self) -> bool:
         wireless = get_wireless_interfaces()
@@ -82,8 +106,16 @@ class IDSMonitor:
 
                 if packet.haslayer(TCP):
                     self.stats['tcp'] += 1
+                    if packet.haslayer(IP):
+                        self.port_stats[packet[TCP].dport] += 1
+                        self.unique_ips.add(packet[IP].src)
+                        self.unique_ips.add(packet[IP].dst)
                 elif packet.haslayer(UDP):
                     self.stats['udp'] += 1
+                    if packet.haslayer(IP):
+                        self.port_stats[packet[UDP].dport] += 1
+                        self.unique_ips.add(packet[IP].src)
+                        self.unique_ips.add(packet[IP].dst)
                 elif packet.haslayer(ARP):
                     self.stats['arp'] += 1
 
@@ -111,6 +143,14 @@ class IDSMonitor:
 
             # Store packet info
             packet_info = self._extract_packet_info(packet)
+
+            # Log packet to file for later analysis
+            self.logger.info(
+                f"Packet: {packet_info['proto']} "
+                f"{packet_info['src']}:{packet_info['sport']} -> "
+                f"{packet_info['dst']}:{packet_info['dport']}"
+            )
+
             with self.lock:
                 self.packets.append(packet_info)
                 if len(self.packets) > 1000:  # Keep last 1000
@@ -147,6 +187,8 @@ class IDSMonitor:
                 info['proto'] = 'UDP'
                 info['sport'] = str(packet[UDP].sport)
                 info['dport'] = str(packet[UDP].dport)
+            elif packet.haslayer(ICMP):
+                info['proto'] = 'ICMP'
 
         elif packet.haslayer(ARP):
             info['proto'] = 'ARP'
@@ -160,7 +202,25 @@ class IDSMonitor:
 
     def _render_table(self) -> Table:
         # Build the live traffic table
-        stats_text = f"TCP: {self.stats['tcp']} | UDP: {self.stats['udp']} | ARP: {self.stats['arp']} | Total: {self.stats['total']}"
+        with self.lock:
+            total = self.stats['total']
+            alerts = len(self.alerts)
+            unique_ip_count = len(self.unique_ips)
+
+            # Get top 3 ports
+            top_ports = []
+            for port, count in self.port_stats.most_common(3):
+                # Service mapping
+                port_services = {
+                    20: 'FTP-Data', 21: 'FTP', 22: 'SSH', 23: 'Telnet',
+                    25: 'SMTP', 53: 'DNS', 80: 'HTTP', 443: 'HTTPS',
+                    445: 'SMB', 3389: 'RDP', 8080: 'HTTP-Alt'
+                }
+                service = port_services.get(port, str(port))
+                top_ports.append(service)
+
+            ports_text = ", ".join(top_ports) if top_ports else "N/A"
+            stats_text = f"Packets: {total} | Alerts: {alerts} | IPs: {unique_ip_count} | Top Services: {ports_text}"
 
         table = Table(
             title=f"Live Network Traffic [{stats_text}]",
@@ -242,6 +302,9 @@ class IDSMonitor:
 
         finally:
             self.stop()
+
+            # Clear any remaining Live display artifacts
+            self.console.print()
 
             # Save PCAP if requested
             if save_pcap and pcap_packets:

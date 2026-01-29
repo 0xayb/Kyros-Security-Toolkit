@@ -133,11 +133,18 @@ class DNSSpoofDetector(AttackDetector):
 class FloodDetector(AttackDetector):
     # Detects flood attacks (SYN, UDP, ICMP)
 
-    def __init__(self):
+    def __init__(self, local_ip: str = None):
         super().__init__()
         self.syn_packets = defaultdict(list)
         self.udp_packets = defaultdict(list)
         self.icmp_packets = defaultdict(list)
+
+        # Track last alert time to prevent spam
+        self.last_alert = defaultdict(lambda: {'syn': 0, 'udp': 0, 'icmp': 0})
+        self.alert_cooldown = 10  # seconds between alerts for same IP
+
+        # Ignore floods from local IP (outbound traffic)
+        self.local_ip = local_ip
 
         self.syn_threshold = get_config().get('ids.syn_flood_threshold', 100)
         self.udp_threshold = get_config().get('ids.udp_flood_threshold', 1000)
@@ -159,35 +166,59 @@ class FloodDetector(AttackDetector):
         if packet.haslayer(TCP) and packet.haslayer(IP):
             if packet[TCP].flags & 0x02:  # SYN flag
                 src_ip = packet[IP].src
+
+                # Ignore outbound traffic from local machine
+                if self.local_ip and src_ip == self.local_ip:
+                    return None
+
                 self.syn_packets[src_ip].append(current_time)
                 self._clean_old_packets(self.syn_packets)
 
                 if len(self.syn_packets[src_ip]) > self.syn_threshold:
-                    msg = f"SYN Flood detected from {src_ip} ({len(self.syn_packets[src_ip])} packets)"
-                    self.log_alert('SYN_Flood', msg)
-                    return msg
+                    # Check cooldown to prevent alert spam
+                    if current_time - self.last_alert[src_ip]['syn'] > self.alert_cooldown:
+                        self.last_alert[src_ip]['syn'] = current_time
+                        msg = f"SYN Flood detected from {src_ip} ({len(self.syn_packets[src_ip])} packets)"
+                        self.log_alert('SYN_Flood', msg)
+                        return msg
 
         # UDP Flood
         if packet.haslayer(UDP) and packet.haslayer(IP):
             src_ip = packet[IP].src
+
+            # Ignore outbound traffic from local machine
+            if self.local_ip and src_ip == self.local_ip:
+                return None
+
             self.udp_packets[src_ip].append(current_time)
             self._clean_old_packets(self.udp_packets, window=1)
 
             if len(self.udp_packets[src_ip]) > self.udp_threshold:
-                msg = f"UDP Flood detected from {src_ip} ({len(self.udp_packets[src_ip])} packets)"
-                self.log_alert('UDP_Flood', msg)
-                return msg
+                # Check cooldown to prevent alert spam
+                if current_time - self.last_alert[src_ip]['udp'] > self.alert_cooldown:
+                    self.last_alert[src_ip]['udp'] = current_time
+                    msg = f"UDP Flood detected from {src_ip} ({len(self.udp_packets[src_ip])} packets)"
+                    self.log_alert('UDP_Flood', msg)
+                    return msg
 
         # ICMP Flood
         if packet.haslayer(ICMP) and packet.haslayer(IP):
             src_ip = packet[IP].src
+
+            # Ignore outbound traffic from local machine
+            if self.local_ip and src_ip == self.local_ip:
+                return None
+
             self.icmp_packets[src_ip].append(current_time)
             self._clean_old_packets(self.icmp_packets, window=1)
 
             if len(self.icmp_packets[src_ip]) > self.icmp_threshold:
-                msg = f"ICMP Flood detected from {src_ip} ({len(self.icmp_packets[src_ip])} packets)"
-                self.log_alert('ICMP_Flood', msg)
-                return msg
+                # Check cooldown to prevent alert spam
+                if current_time - self.last_alert[src_ip]['icmp'] > self.alert_cooldown:
+                    self.last_alert[src_ip]['icmp'] = current_time
+                    msg = f"ICMP Flood detected from {src_ip} ({len(self.icmp_packets[src_ip])} packets)"
+                    self.log_alert('ICMP_Flood', msg)
+                    return msg
 
         return None
 

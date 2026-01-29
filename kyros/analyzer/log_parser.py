@@ -14,6 +14,18 @@ class LogParser:
     # Regex patterns
     IP_PATTERN = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
     TIMESTAMP_PATTERN = re.compile(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
+    # Match port numbers only in IP:port context (not timestamps)
+    PORT_PATTERN = re.compile(r'(?:[0-9]{1,3}\.){3}[0-9]{1,3}:(\d+)')
+
+    # Common port to service mapping
+    PORT_SERVICES = {
+        20: 'FTP-Data', 21: 'FTP', 22: 'SSH', 23: 'Telnet',
+        25: 'SMTP', 53: 'DNS', 67: 'DHCP', 68: 'DHCP',
+        80: 'HTTP', 110: 'POP3', 143: 'IMAP', 443: 'HTTPS',
+        445: 'SMB', 993: 'IMAPS', 995: 'POP3S', 3306: 'MySQL',
+        3389: 'RDP', 5432: 'PostgreSQL', 5900: 'VNC', 8080: 'HTTP-Alt',
+        8443: 'HTTPS-Alt', 27017: 'MongoDB'
+    }
 
     # Attack keywords to search for
     ATTACK_KEYWORDS = {
@@ -40,7 +52,9 @@ class LogParser:
         result = {
             'file': str(log_file),
             'total_lines': 0,
-            'protocols': Counter(),
+            'protocols': Counter(),  # Keep for backwards compatibility
+            'ports': Counter(),
+            'services': Counter(),
             'attack_types': Counter(),
             'ips': Counter(),
             'timestamps': [],
@@ -70,7 +84,23 @@ class LogParser:
                     for ip in ips:
                         result['ips'][ip] += 1
 
-                    # Detect protocols
+                    # Extract ports and map to services
+                    ports = self.PORT_PATTERN.findall(line)
+                    for port_str in ports:
+                        try:
+                            port = int(port_str)
+                            if 0 < port <= 65535:  # Valid port range
+                                result['ports'][port] += 1
+                                # Map to service name if known
+                                if port in self.PORT_SERVICES:
+                                    service_label = f"{port} ({self.PORT_SERVICES[port]})"
+                                else:
+                                    service_label = str(port)
+                                result['services'][service_label] += 1
+                        except ValueError:
+                            pass
+
+                    # Detect protocols (keep for backwards compatibility)
                     line_lower = line.lower()
                     for proto in ['tcp', 'udp', 'arp', 'dns', 'icmp']:
                         if proto in line_lower:

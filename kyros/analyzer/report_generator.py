@@ -31,16 +31,16 @@ class ReportGenerator:
                     f.write(f"Time Range: {parsed_data['first_timestamp']} to {parsed_data['last_timestamp']}\n")
                     f.write(f"Duration: {parsed_data.get('duration', 'Unknown')}\n\n")
 
-                # Protocol statistics
+                # Service/Port statistics
                 f.write("=" * 70 + "\n")
-                f.write("Protocol Statistics\n")
+                f.write("Service/Port Statistics\n")
                 f.write("=" * 70 + "\n")
-                protocols = parsed_data.get('protocols', {})
-                if protocols:
-                    for proto, count in protocols.most_common():
-                        f.write(f"  {proto}: {count}\n")
+                services = parsed_data.get('services', {})
+                if services:
+                    for service, count in services.most_common():
+                        f.write(f"  {service}: {count}\n")
                 else:
-                    f.write("  No protocol data found\n")
+                    f.write("  No service data found\n")
                 f.write("\n")
 
                 # Attack statistics
@@ -109,9 +109,13 @@ class ReportGenerator:
         if 'first_timestamp' in parsed_data:
             print(f"{Fore.YELLOW}Time Range:{Style.RESET_ALL} {Fore.WHITE}{parsed_data['first_timestamp']} to {parsed_data['last_timestamp']}{Style.RESET_ALL}")
 
-        print(f"\n{Fore.YELLOW}Protocols:{Style.RESET_ALL}")
-        for proto, count in parsed_data.get('protocols', {}).most_common():
-            print(f"  {Fore.GREEN}{proto}:{Style.RESET_ALL} {Fore.WHITE}{count}{Style.RESET_ALL}")
+        print(f"\n{Fore.YELLOW}Top Services/Ports:{Style.RESET_ALL}")
+        services = parsed_data.get('services', {})
+        if services:
+            for service, count in services.most_common(15):
+                print(f"  {Fore.GREEN}{service}:{Style.RESET_ALL} {Fore.WHITE}{count}{Style.RESET_ALL}")
+        else:
+            print(f"  {Fore.YELLOW}No service data found{Style.RESET_ALL}")
 
         print(f"\n{Fore.YELLOW}Attacks Detected:{Style.RESET_ALL}")
         attacks = parsed_data.get('attack_types', {})
