@@ -155,10 +155,6 @@ Monitor network traffic for suspicious activity:
 
 ![IDS Monitor](screenshots/ids-monitor.png)
 
-**Session Summary:**
-
-![IDS Summary](screenshots/ids-summary.png)
-
 Logs are saved in `data/logs/` and PCAP files (if enabled) are stored in the data directory.
 
 ### 2. Log Analyzer
@@ -177,7 +173,9 @@ Analyze captured IDS logs for patterns and threats:
 
 **Analysis Summary:**
 
-![Log Summary](screenshots/logs-summary.png)
+![Log Summary 1](screenshots/logs-summary-1.png)
+
+![Log Summary 2](screenshots/logs-summary-2.png)
 
 ### 3. Firewall Manager
 
